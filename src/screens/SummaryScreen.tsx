@@ -8,12 +8,16 @@ import { EmptyState } from '../components/states/EmptyState';
 import { ErrorBanner } from '../components/states/ErrorBanner';
 import { ErrorState } from '../components/states/ErrorState';
 import { LoadingState } from '../components/states/LoadingState';
+import { OfflineBanner } from '../components/states/OfflineBanner';
+import { SyncNotice } from '../components/states/SyncNotice';
 import { LargeTitleHeader } from '../components/ui/LargeTitleHeader';
 import { Screen } from '../components/ui/Screen';
 import { Text } from '../components/ui/Text';
 import { filterByRange } from '../domain/chart';
 import { useDashboardStats } from '../hooks/useDashboardStats';
+import { useSyncNotice } from '../hooks/useSyncNotice';
 import { useAuthStore } from '../stores/authStore';
+import { useOutboxStore } from '../stores/outboxStore';
 import { spacing } from '../theme/spacing';
 import type { ChartRange } from '../types/checkin';
 
@@ -22,7 +26,9 @@ export function SummaryScreen() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
-  const { stats, status, error, isRefreshing, refetch } = useDashboardStats();
+  const { stats, status, error, isRefreshing, isOffline, refetch } = useDashboardStats();
+  const syncNotice = useSyncNotice();
+  const unsyncedCount = useOutboxStore((s) => s.items.length);
   const [range, setRange] = useState<ChartRange>('M');
 
   const chartPoints = useMemo(() => filterByRange(stats.history, range, new Date()), [stats.history, range]);
@@ -31,13 +37,28 @@ export function SummaryScreen() {
   const addCheckin = useCallback(() => router.push('/checkin/new'), [router]);
 
   const openAccountMenu = () => {
-    Alert.alert(user?.name ?? 'Account', user?.email, [
+    // Signing out clears this device's copy, so check-ins that never reached the server would be gone for good.
+    const warning =
+      unsyncedCount > 0
+        ? `${unsyncedCount} check-in${unsyncedCount === 1 ? ' has' : 's have'} not synced yet and will be lost if you sign out.`
+        : user?.email;
+    Alert.alert(user?.name ?? 'Account', warning, [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Sign out', style: 'destructive', onPress: () => void logout() },
     ]);
   };
 
-  const header = <LargeTitleHeader title="Summary" onAvatarPress={openAccountMenu} />;
+  const header = (
+    <>
+      <LargeTitleHeader title="Summary" onAvatarPress={openAccountMenu} />
+      {isOffline || syncNotice ? (
+        <View style={styles.notices}>
+          {isOffline ? <OfflineBanner /> : null}
+          {syncNotice ? <SyncNotice message={syncNotice} /> : null}
+        </View>
+      ) : null}
+    </>
+  );
   const hasData = stats.total > 0;
   const isFirstLoad = (status === 'idle' || status === 'loading') && !isRefreshing && !hasData;
 
@@ -93,4 +114,5 @@ export function SummaryScreen() {
 
 const styles = StyleSheet.create({
   content: { gap: spacing.md },
+  notices: { gap: spacing.sm, paddingBottom: spacing.md },
 });

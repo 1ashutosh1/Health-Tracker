@@ -10,9 +10,9 @@ interface OfflineBannerProps {
   message?: string;
 }
 
-/** Placeholder: UI only. Phase 5 wires it to networkStore. */
+/** Shown under a header while there is no connection. Screens decide when (they know `isOffline`). */
 export function OfflineBanner({
-  message = "You're offline. Changes will sync when you reconnect.",
+  message = "You're offline. New check-ins will sync when you reconnect.",
 }: OfflineBannerProps) {
   const { colors } = useTheme();
   const accent = colors.status.pending;

@@ -10,6 +10,7 @@ import type { CategoryName, IconName } from '../../types/ui';
 import { formatCheckinDate, formatDecimal, formatSteps, MOOD_LABELS } from '../../utils/format';
 import { Text } from '../ui/Text';
 import { MOOD_ICONS } from './moodIcons';
+import { SyncBadge } from './SyncBadge';
 
 interface CheckinRowProps {
   checkin: Checkin;
@@ -18,7 +19,12 @@ interface CheckinRowProps {
   isLast: boolean;
   /** Must be a stable function (useCallback), or memo() can never skip a render. */
   onPress: (id: string) => void;
+  /** The Retry on a failed row. Also a stable function (useCallback). */
+  onRetrySync?: () => void;
 }
+
+/** Spoken after the row's summary. Synced rows say nothing extra, like their plain look. */
+const SYNC_LABELS = { synced: '', pending: ' Pending sync.', failed: ' Sync failed.' } as const;
 
 interface MetricProps {
   icon: IconName;
@@ -40,7 +46,7 @@ function Metric({ icon, category, text }: MetricProps) {
 }
 
 /** One line of the inset-grouped list: the date, the four numbers in their category colors, the mood. */
-function CheckinRowBase({ checkin, isFirst, isLast, onPress }: CheckinRowProps) {
+function CheckinRowBase({ checkin, isFirst, isLast, onPress, onRetrySync }: CheckinRowProps) {
   const { colors } = useTheme();
 
   const date = formatCheckinDate(checkin.checkinDate);
@@ -52,7 +58,9 @@ function CheckinRowBase({ checkin, isFirst, isLast, onPress }: CheckinRowProps) 
   const label =
     `${date}. Weight ${formatDecimal(checkin.weightKg)} kilograms, ${steps} steps, ` +
     `${formatDecimal(checkin.sleepHours)} hours of sleep, ${formatDecimal(checkin.waterLitres, 2)} litres of water, ` +
-    `mood ${MOOD_LABELS[checkin.mood].toLowerCase()}.`;
+    `mood ${MOOD_LABELS[checkin.mood].toLowerCase()}.` +
+    SYNC_LABELS[checkin.syncStatus];
+  const canRetry = checkin.syncStatus === 'failed' && onRetrySync !== undefined;
 
   return (
     <Pressable
@@ -60,6 +68,11 @@ function CheckinRowBase({ checkin, isFirst, isLast, onPress }: CheckinRowProps) 
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityHint="Opens the check-in"
+      // The badge sits inside this button, so a screen reader cannot reach its Retry. This action replaces it.
+      accessibilityActions={canRetry ? [{ name: 'retry', label: 'Retry sync' }] : undefined}
+      onAccessibilityAction={(event) => {
+        if (event.nativeEvent.actionName === 'retry') onRetrySync?.();
+      }}
       style={({ pressed }) => [
         styles.row,
         { backgroundColor: colors.card },
@@ -78,6 +91,7 @@ function CheckinRowBase({ checkin, isFirst, isLast, onPress }: CheckinRowProps) 
           <Metric icon="bed-outline" category="sleep" text={sleep} />
           <Metric icon="water-outline" category="water" text={water} />
         </View>
+        <SyncBadge syncStatus={checkin.syncStatus} onRetry={onRetrySync} />
       </View>
 
       <Ionicons name={MOOD_ICONS[checkin.mood]} size={24} color={colors.category.mind} />

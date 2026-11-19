@@ -8,12 +8,16 @@ import { EmptyState } from '../components/states/EmptyState';
 import { ErrorBanner } from '../components/states/ErrorBanner';
 import { ErrorState } from '../components/states/ErrorState';
 import { LoadingState } from '../components/states/LoadingState';
+import { OfflineBanner } from '../components/states/OfflineBanner';
+import { SyncNotice } from '../components/states/SyncNotice';
 import { IconButton } from '../components/ui/IconButton';
 import { LargeTitleHeader } from '../components/ui/LargeTitleHeader';
 import { Screen } from '../components/ui/Screen';
 import { applyFilters } from '../domain/filters';
 import { useCheckinFilters } from '../hooks/useCheckinFilters';
 import { useCheckins } from '../hooks/useCheckins';
+import { useRetrySync } from '../hooks/useRetrySync';
+import { useSyncNotice } from '../hooks/useSyncNotice';
 import { spacing } from '../theme/spacing';
 import type { Checkin } from '../types/checkin';
 import { checkinDetailHref } from '../utils/routes';
@@ -22,7 +26,9 @@ const keyExtractor = (item: Checkin) => item.id;
 
 export function CheckinListScreen() {
   const router = useRouter();
-  const { data, status, error, isRefreshing, refetch } = useCheckins();
+  const { data, status, error, isRefreshing, isOffline, refetch } = useCheckins();
+  const retrySync = useRetrySync();
+  const syncNotice = useSyncNotice();
   const { filters, isFiltering, setSort, toggleMood, setFrom, setTo, clearFilters } = useCheckinFilters();
 
   // Derived, never stored: recomputed only when the data or the filters change.
@@ -35,9 +41,15 @@ export function CheckinListScreen() {
   const lastIndex = visible.length - 1;
   const renderItem = useCallback<ListRenderItem<Checkin>>(
     ({ item, index }) => (
-      <CheckinRow checkin={item} isFirst={index === 0} isLast={index === lastIndex} onPress={openCheckin} />
+      <CheckinRow
+        checkin={item}
+        isFirst={index === 0}
+        isLast={index === lastIndex}
+        onPress={openCheckin}
+        onRetrySync={retrySync}
+      />
     ),
-    [lastIndex, openCheckin],
+    [lastIndex, openCheckin, retrySync],
   );
 
   const hasData = data.length > 0;
@@ -106,6 +118,12 @@ export function CheckinListScreen() {
         title="Check-ins"
         right={<IconButton icon="add" onPress={openNewCheckin} accessibilityLabel="Add check-in" />}
       />
+      {isOffline || syncNotice ? (
+        <View style={styles.notices}>
+          {isOffline ? <OfflineBanner /> : null}
+          {syncNotice ? <SyncNotice message={syncNotice} /> : null}
+        </View>
+      ) : null}
       {body}
     </Screen>
   );
@@ -113,5 +131,6 @@ export function CheckinListScreen() {
 
 const styles = StyleSheet.create({
   header: { gap: spacing.sm },
+  notices: { gap: spacing.sm, paddingBottom: spacing.sm },
   listContent: { paddingBottom: spacing.xl },
 });
