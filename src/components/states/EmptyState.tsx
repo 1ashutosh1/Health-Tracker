@@ -1,14 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, View } from 'react-native';
 
+import { resolveColor } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { useTheme } from '../../theme/useTheme';
-import type { IconName } from '../../types/ui';
+import type { ColorToken, IconName } from '../../types/ui';
 import { Button } from '../ui/Button';
 import { Text } from '../ui/Text';
 
 interface EmptyStateProps {
   icon: IconName;
+  /** Defaults to a quiet grey. */
+  iconColor?: ColorToken;
   title: string;
   message: string;
   /** Both must be provided to show the action button. */
@@ -16,12 +19,12 @@ interface EmptyStateProps {
   onAction?: () => void;
 }
 
-export function EmptyState({ icon, title, message, actionLabel, onAction }: EmptyStateProps) {
+export function EmptyState({ icon, iconColor, title, message, actionLabel, onAction }: EmptyStateProps) {
   const { colors } = useTheme();
 
   return (
     <View style={styles.container}>
-      <Ionicons name={icon} size={44} color={colors.tertiaryLabel} />
+      <Ionicons name={icon} size={44} color={iconColor ? resolveColor(colors, iconColor) : colors.tertiaryLabel} />
       <View style={styles.text} accessible>
         <Text variant="headline" style={styles.centered}>
           {title}

@@ -9,6 +9,8 @@ import { Text } from './Text';
 interface Option<T extends string> {
   value: T;
   label: string;
+  /** Spoken instead of `label` when the visible text is short ("6M" -> "Past 6 months"). */
+  accessibilityLabel?: string;
 }
 
 interface SegmentedControlProps<T extends string> {
@@ -75,7 +77,7 @@ export function SegmentedControl<T extends string>({
             key={option.value}
             onPress={() => onChange(option.value)}
             accessibilityRole="radio"
-            accessibilityLabel={option.label}
+            accessibilityLabel={option.accessibilityLabel ?? option.label}
             accessibilityState={{ selected }}
             // The visual track is 32pt tall; hitSlop brings the touch target up to 44pt.
             hitSlop={{ top: 6, bottom: 6 }}

@@ -45,6 +45,9 @@ export interface WeightPoint {
   weightKg: number;
 }
 
+/** Time window of the weight chart: past week, past month, past 6 months, or everything. */
+export type ChartRange = 'W' | 'M' | '6M' | 'All';
+
 export interface DashboardStats {
   /** Weight of the most recent check-in. */
   current: number | null;

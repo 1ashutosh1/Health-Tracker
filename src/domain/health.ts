@@ -1,6 +1,7 @@
 import { parseISO } from 'date-fns';
 
 import type { BmiCategory, Checkin, DashboardStats, Trend } from '../types/checkin';
+import { formatDecimal } from '../utils/format';
 
 /** Rounds to 1 decimal and never returns -0. */
 function round1(value: number): number {
@@ -83,4 +84,14 @@ export function getSleepWarning(hours: number): string | null {
   if (hours < TYPICAL_SLEEP_HOURS.min) return 'That is very little sleep. Double-check the number.';
   if (hours > TYPICAL_SLEEP_HOURS.max) return 'That is a lot of sleep. Double-check the number.';
   return null;
+}
+
+/**
+ * The sentence under the big weight number: "Down 3.6 kg since you started".
+ * `unit` is "kg" on screen and "kilograms" for screen readers.
+ */
+export function describeTrend(trend: Trend | null, difference: number | null, unit = 'kg'): string {
+  if (trend === null || difference === null || trend === 'same') return 'No change yet';
+  const amount = formatDecimal(Math.abs(difference));
+  return `${trend === 'down' ? 'Down' : 'Up'} ${amount} ${unit} since you started`;
 }

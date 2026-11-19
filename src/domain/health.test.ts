@@ -1,5 +1,5 @@
 import { makeCheckin } from '../test-utils/makeCheckin';
-import { calculateBMI, compareCheckins, computeDashboardStats, getBMICategory, getSleepWarning } from './health';
+import { calculateBMI, compareCheckins, computeDashboardStats, describeTrend, getBMICategory, getSleepWarning } from './health';
 
 describe('calculateBMI', () => {
   it('computes 70 kg at 175 cm as 22.9', () => {
@@ -197,5 +197,25 @@ describe('getSleepWarning', () => {
 
   it('does not warn for a non-number', () => {
     expect(getSleepWarning(NaN)).toBeNull();
+  });
+});
+
+describe('describeTrend', () => {
+  it('describes a loss, in kg or spoken units', () => {
+    expect(describeTrend('down', -3.6)).toBe('Down 3.6 kg since you started');
+    expect(describeTrend('down', -3.6, 'kilograms')).toBe('Down 3.6 kilograms since you started');
+  });
+
+  it('describes a gain', () => {
+    expect(describeTrend('up', 1.2)).toBe('Up 1.2 kg since you started');
+  });
+
+  it('says "No change yet" for no change, a single check-in or no data', () => {
+    expect(describeTrend('same', 0)).toBe('No change yet');
+    expect(describeTrend(null, null)).toBe('No change yet');
+  });
+
+  it('drops a trailing .0 like the rest of the app', () => {
+    expect(describeTrend('down', -4)).toBe('Down 4 kg since you started');
   });
 });

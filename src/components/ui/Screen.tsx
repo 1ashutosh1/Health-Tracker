@@ -1,5 +1,12 @@
-import type { ReactNode } from 'react';
-import { ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import type { ReactElement, ReactNode } from 'react';
+import {
+  ScrollView,
+  StyleSheet,
+  View,
+  type RefreshControlProps,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 
 import { layout, spacing } from '../../theme/spacing';
@@ -12,6 +19,8 @@ interface ScreenProps {
   /** Which safe-area edges to pad. Screens under a native header or tab bar can drop some. */
   edges?: readonly Edge[];
   contentStyle?: StyleProp<ViewStyle>;
+  /** Pull-to-refresh. Only used when `scroll` is true. */
+  refreshControl?: ReactElement<RefreshControlProps>;
 }
 
 export function Screen({
@@ -19,6 +28,7 @@ export function Screen({
   scroll = false,
   edges = ['top', 'left', 'right'],
   contentStyle,
+  refreshControl,
 }: ScreenProps) {
   const { colors } = useTheme();
 
@@ -28,6 +38,7 @@ export function Screen({
         <ScrollView
           contentContainerStyle={[styles.scrollContent, contentStyle]}
           keyboardShouldPersistTaps="handled"
+          refreshControl={refreshControl}
           showsVerticalScrollIndicator={false}
         >
           {children}

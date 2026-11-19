@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { spacing } from '../../theme/spacing';
 import { useTheme } from '../../theme/useTheme';
@@ -14,11 +14,14 @@ interface MetricTileProps {
   label: string;
   value: string;
   unit?: string;
-  /** Already formatted, e.g. "Today" or "8:30 AM". */
-  timestamp: string;
+  /** Already formatted, e.g. "Today" or "8:30 AM". Left out when the tile has nothing to date. */
+  timestamp?: string;
+  /** A small line under the number, e.g. the BMI category. */
+  caption?: string;
   /** Spoken as one sentence, e.g. "Current weight, 72.4 kilograms". */
   accessibilityLabel: string;
   onPress?: () => void;
+  style?: StyleProp<ViewStyle>;
 }
 
 /** Apple Health "Summary" tile: category header row, then a big number with a grey unit. */
@@ -29,8 +32,10 @@ export function MetricTile({
   value,
   unit,
   timestamp,
+  caption,
   accessibilityLabel,
   onPress,
+  style,
 }: MetricTileProps) {
   const { colors } = useTheme();
   const categoryColor = colors.category[category];
@@ -45,13 +50,16 @@ export function MetricTile({
           </Text>
         </View>
         <View style={styles.meta}>
-          <Text variant="footnote" color="secondaryLabel">
-            {timestamp}
-          </Text>
+          {timestamp ? (
+            <Text variant="footnote" color="secondaryLabel">
+              {timestamp}
+            </Text>
+          ) : null}
           {onPress ? <Ionicons name="chevron-forward" size={14} color={colors.tertiaryLabel} /> : null}
         </View>
       </View>
-      <Text variant="metricValue">
+      {/* One line: a long value such as "Yesterday" shrinks to fit a half-width tile instead of wrapping. */}
+      <Text variant="metricValue" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>
         {value}
         {unit ? (
           <Text variant="subhead" color="secondaryLabel">
@@ -59,11 +67,16 @@ export function MetricTile({
           </Text>
         ) : null}
       </Text>
+      {caption ? (
+        <Text variant="footnote" color="secondaryLabel">
+          {caption}
+        </Text>
+      ) : null}
     </View>
   );
 
   return (
-    <Card onPress={onPress} accessibilityLabel={accessibilityLabel}>
+    <Card onPress={onPress} accessibilityLabel={accessibilityLabel} style={style}>
       {content}
     </Card>
   );

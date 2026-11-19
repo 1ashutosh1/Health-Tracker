@@ -1,4 +1,4 @@
-import { format, isValid, parseISO } from 'date-fns';
+import { differenceInCalendarDays, format, isValid, parseISO } from 'date-fns';
 
 import type { Mood } from '../types/checkin';
 
@@ -33,3 +33,28 @@ export const MOOD_LABELS: Record<Mood, string> = {
   neutral: 'Neutral',
   sad: 'Sad',
 };
+
+/** "Nov 19" (or "Nov 19, 2025" for another year). Falls back to the raw text for an unparseable date. */
+export function formatShortIsoDate(iso: string, now: Date = new Date()): string {
+  const date = parseISO(iso);
+  if (!isValid(date)) return iso;
+  return format(date, date.getFullYear() === now.getFullYear() ? 'MMM d' : 'MMM d, yyyy');
+}
+
+/** "Today", "Yesterday", "3 days ago"; from a week on, a plain date. A date in the future counts as "Today". */
+export function formatRelativeDay(iso: string, now: Date = new Date()): string {
+  const date = parseISO(iso);
+  if (!isValid(date)) return iso;
+  const daysAgo = differenceInCalendarDays(now, date);
+  if (daysAgo <= 0) return 'Today';
+  if (daysAgo === 1) return 'Yesterday';
+  if (daysAgo < 7) return `${daysAgo} days ago`;
+  return formatShortIsoDate(iso, now);
+}
+
+/** "+1.2", "-3.6" or "0": a change always shows its direction as text, not only as a color. */
+export function formatSignedDecimal(value: number): string {
+  const text = formatDecimal(Math.abs(value));
+  if (text === '0') return '0';
+  return `${value < 0 ? '-' : '+'}${text}`;
+}
