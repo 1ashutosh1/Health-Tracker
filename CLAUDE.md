@@ -15,12 +15,13 @@ The graders care most about **engineering quality**: separation of concerns, sta
 6. **Every async screen handles 4 states:** loading, error (with a Retry button), empty and data.
 7. **Install packages with `npx expo install <pkg>`** so versions match the SDK.
 8. When a phase is done, list exactly what I should test by hand, then stop.
+9. **If `AGENTS.md` and this file disagree, this file wins** on architecture, libraries and design. Follow AGENTS.md for Expo specifics: check the SDK version in package.json and the versioned Expo docs before using any Expo API, and never edit `android/` by hand (configure through app.json or config plugins).
 
 ## Tech stack (fixed, don't swap)
 | Concern | Choice |
 |---|---|
 | Framework | Expo (latest SDK) with a **development build** (`npx expo run:android`). Not Expo Go. |
-| Navigation | React Navigation: native-stack + bottom-tabs |
+| Navigation | **Expo Router** (file-based, built on React Navigation). Auth gating with `Stack.Protected`. Route files in `src/app/` stay thin and just render a screen from `src/screens/` |
 | Data fetching | **Custom hooks only. NO React Query / SWR / RTK Query.** Hooks call the repository and write results into Zustand stores |
 | State | Zustand (+ `persist` middleware with AsyncStorage): `authStore`, `checkinsStore` (server cache), `outboxStore` (pending sync), `networkStore`, `filterStore` |
 | UI state | Local `useState` inside components; filters in `filterStore` so they survive navigation |
@@ -36,25 +37,36 @@ The graders care most about **engineering quality**: separation of concerns, sta
 | Tests | jest-expo + @testing-library/react-native (logic tests come first) |
 
 ## Folder structure
+Everything lives under `src/`. Routes go in `src/app/` (Expo Router), and everything else stays outside it.
 ```
 src/
-  api/            # mockServer.ts (fake remote DB, latency, failures), client.ts, checkinsApi.ts, authApi.ts
-  storage/        # storage.ts (typed AsyncStorage wrapper), secureStorage.ts, keys.ts
-  domain/         # health.ts (BMI, stats), validation.ts (zod), filters.ts, sync.ts (sync engine), *.test.ts
-  services/       # checkinRepository.ts (online/offline routing), syncService.ts (triggers + lock)
-  stores/         # authStore.ts, checkinsStore.ts, outboxStore.ts, networkStore.ts, filterStore.ts
-  hooks/          # useCheckins.ts, useCheckin.ts, useCheckinMutations.ts, useSubmitLock.ts, useDashboardStats.ts, useDeepLinkHandler.ts, useNetworkSync.ts
-  navigation/     # RootNavigator.tsx, MainTabs.tsx, types.ts, navigationRef.ts
-  screens/        # Login, Dashboard, CheckinList, CheckinDetail, CheckinForm, NotFound
+  app/                       # Expo Router routes ONLY (thin: import a screen, render it, set header options)
+    _layout.tsx              # root: fonts, auth hydrate, NetInfo listener, deep-link hook, Stack + Stack.Protected
+    login.tsx                # guarded: only when signed out
+    (tabs)/_layout.tsx       # bottom tabs: Summary, Check-ins
+    (tabs)/index.tsx         # Summary (dashboard)
+    (tabs)/checkins.tsx      # Check-in list
+    checkin/new.tsx          # create (modal). Static route wins over [id]
+    checkin/[id]/index.tsx   # detail: deep-link target healthtracker://checkin/:id
+    checkin/[id]/edit.tsx    # edit (modal)
+    +not-found.tsx           # unknown routes / bad deep links
+  screens/        # LoginScreen, SummaryScreen, CheckinListScreen, CheckinDetailScreen, CheckinFormScreen (real UI lives here)
   components/
     ui/           # Text, Card, Button, TextField, SegmentedControl, Chip, Badge, ListRow, Screen, LargeTitleHeader
     states/       # LoadingState, ErrorState, EmptyState, OfflineBanner
     checkins/     # CheckinRow, SyncBadge, MoodPicker, MetricTile
     charts/       # WeightChart
+  hooks/          # useCheckins.ts, useCheckin.ts, useCheckinMutations.ts, useSubmitLock.ts, useDashboardStats.ts, useDeepLinkHandler.ts, useNetworkSync.ts
+  stores/         # authStore.ts, checkinsStore.ts, outboxStore.ts, networkStore.ts, filterStore.ts
+  services/       # checkinRepository.ts (online/offline routing), syncService.ts (triggers + lock)
+  api/            # mockServer.ts (fake remote DB, latency, failures), checkinsApi.ts, authApi.ts
+  storage/        # storage.ts (typed AsyncStorage wrapper), secureStorage.ts, keys.ts
+  domain/         # health.ts, validation.ts (zod), filters.ts, sync.ts, deepLink.ts + *.test.ts next to each
   theme/          # colors.ts, typography.ts, spacing.ts, useTheme.ts
   types/          # checkin.ts, auth.ts, api.ts
-  utils/          # format.ts (dates, numbers), errors.ts (ApiError, NetworkError, NotFoundError), retry.ts
+  utils/          # format.ts, errors.ts (ApiError, NetworkError, NotFoundError), retry.ts
 ```
+**Test files must never go inside `src/app/`**, because Expo Router would treat them as routes.
 
 ## Custom data-hook contract
 Every data hook returns the same shape, so screens stay consistent:
@@ -159,5 +171,7 @@ metricValue 32/38 bold, fontVariant ['tabular-nums']
 npx expo run:android          # build + run dev client on USB phone
 npx expo start --dev-client   # restart Metro only
 npm test                      # jest
-npx tsc --noEmit              # typecheck. Must pass before every commit
+npx tsc --noEmit              # typecheck
+npx expo lint                 # lint. Typecheck + lint + tests must pass before every commit
+npx expo-doctor               # if builds or deps act weird
 ```

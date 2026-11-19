@@ -19,7 +19,8 @@
 | **Explicit outbox + pure sync engine** | "Pending / Synced / Failed" is real data you can show in the UI and unit test. |
 | **`clientId` idempotency key** | If a sync request reaches the server but the response is lost, the retry doesn't create a duplicate, because the server dedupes on `clientId`. This is the strongest "data consistency" point you have. |
 | **Dashboard = `computeDashboardStats(checkins)`** | Derived and memoized, never stored. It updates automatically on create, edit or delete because it reads the same query cache. |
-| **Manual deep-link handler** (`getInitialURL` + `addEventListener`) | Makes cold/warm start and "log in first, then continue to the link" explicit and easy to explain. The link waits in the auth store until the user is logged in and navigation is ready. |
+| **Expo Router (file-based navigation)** | It's Expo's default and recommended router, and it's built on React Navigation underneath. Every route is also a URL, so `healthtracker://checkin/123` maps to `src/app/checkin/[id]/index.tsx` on cold and warm start with no linking config. `Stack.Protected` gives declarative auth gating. |
+| **Pending deep link through login** | When a signed-out user opens a link, the guard sends them to Login and the target would be lost. We save it in `authStore.pendingDeepLink` and `router.push` to it after login. `unstable_settings.initialRouteName = '(tabs)'` means Back from a deep-linked detail screen goes to the tabs instead of exiting the app. |
 | **Apple Health visual language** | A recognizable, restrained reference with system-style grouped cards, category colors and big numbers. It doesn't look AI-generated, and dark mode comes almost for free from the tokens. |
 
 ---
@@ -29,20 +30,16 @@
 **You do (manual):**
 1. Install Node LTS and **Android Studio**. In its SDK Manager, install the latest Android SDK, Platform-Tools and Build-Tools. Set `ANDROID_HOME`, and add `platform-tools` to PATH.
 2. On the phone, enable **Developer options**, then **USB debugging**. Plug it in, then run `adb devices` and accept the prompt on the phone.
-3. Create the app and repo:
-   ```bash
-   npx create-expo-app@latest health-tracker --template blank-typescript
-   cd health-tracker && git init && git add . && git commit -m "chore: scaffold Expo TypeScript app"
-   ```
-4. Copy `CLAUDE.md` and `PLAN.md` into the root. Open the folder in VS Code and start Claude Code.
+3. Scaffold (done ✅). If the template has example screens, run `npm run reset-project` to get a blank `src/app/` folder.
+4. Copy `CLAUDE.md` and `PLAN.md` into the root, next to the generated `AGENTS.md`. Keep AGENTS.md. Open the folder in VS Code and start Claude Code. Don't run `/init`.
 
 **Prompt:**
 ```
-Read CLAUDE.md and PLAN.md. Do Phase 0 only.
-1. Install every dependency in the CLAUDE.md tech stack using `npx expo install` (runtime) and dev deps (jest-expo, jest, @types/jest, @testing-library/react-native). Include react-native-screens, react-native-safe-area-context, react-native-svg, react-native-gesture-handler, zustand, @react-native-async-storage/async-storage, expo-secure-store, @react-native-community/netinfo, @react-native-community/datetimepicker, react-hook-form, zod, @hookform/resolvers, date-fns, expo-crypto, @expo-google-fonts/inter, expo-font, expo-splash-screen.
+Read CLAUDE.md, PLAN.md and AGENTS.md. Do Phase 0 only.
+1. Install every dependency in the CLAUDE.md tech stack using `npx expo install` (runtime) and dev deps (jest-expo, jest, @types/jest, @testing-library/react-native). Expo Router is already installed; do NOT add @react-navigation/* packages directly unless expo-router needs a peer. Include react-native-screens, react-native-safe-area-context, react-native-svg, react-native-gesture-handler, expo-linking, zustand, @react-native-async-storage/async-storage, expo-secure-store, @react-native-community/netinfo, @react-native-community/datetimepicker, react-hook-form, zod, @hookform/resolvers, date-fns, expo-crypto, @expo-google-fonts/inter, expo-font, expo-splash-screen.
 2. In app.json set name "Health Tracker", slug, scheme "healthtracker", android.package "com.<myname>.healthtracker", userInterfaceStyle "automatic".
-3. Turn on strict TS, add a path alias "@/*" -> "src/*" (tsconfig + babel if needed), and configure Jest with the jest-expo preset plus the AsyncStorage jest mock.
-4. Create the empty folder structure from CLAUDE.md with a placeholder index where it helps.
+3. Turn on strict TS, make sure the "@/*" path alias points to "./src/*" (the template may already have it), and configure Jest with the jest-expo preset plus the AsyncStorage jest mock.
+4. Create the empty folder structure from CLAUDE.md (everything under src/, routes in src/app/). If example screens/components from the template remain, delete them. src/app/(tabs)/index.tsx shows a plain "Hello Health" text for now.
 5. Add npm scripts: test, typecheck, android.
 6. Add one trivial test (src/domain/sanity.test.ts) so I can confirm Jest runs.
 Then tell me the exact commands to verify.
@@ -50,9 +47,10 @@ Then tell me the exact commands to verify.
 
 **Checkpoint ✅**
 - [ ] `npm test` passes the sanity test
-- [ ] `npx tsc --noEmit`: no errors
+- [ ] `npx tsc --noEmit` and `npx expo lint`: no errors
+- [ ] `npx expo-doctor`: no failed checks
 - [ ] `npx expo run:android` builds and installs the **dev client** on your phone, and the app opens (first build takes 5–10 min, so start Phase 1 reading while it runs)
-- [ ] Editing `App.tsx` hot-reloads on the phone
+- [ ] Editing `src/app/(tabs)/index.tsx` hot-reloads on the phone
 - [ ] `adb shell am start -a android.intent.action.VIEW -d "healthtracker://test"` opens the app (proves the scheme is registered)
 
 **Commit:** `chore: add dependencies, strict TS, jest, folder structure`
@@ -67,11 +65,11 @@ Then tell me the exact commands to verify.
 ```
 Phase 1 only. Build the theme and UI kit exactly per the CLAUDE.md design system (Apple Health inspired).
 - src/theme: colors (light+dark tokens), typography (Inter, the scale listed), spacing (8pt), useTheme() hook using useColorScheme.
-- Load Inter fonts in App.tsx with expo-splash-screen held until fonts load.
+- Load Inter fonts in src/app/_layout.tsx with expo-splash-screen held until fonts load.
 - src/components/ui: Text (variant prop maps to typography, color prop maps to token), Screen (safe area + grouped background + optional ScrollView), LargeTitleHeader (34pt title + optional right avatar/button), Card, Button (primary/secondary/destructive, loading state shows spinner and disables), TextField (label, error text below in destructive color, accessible), SegmentedControl (pill track, animated thumb), Chip (selectable, for mood filters), Badge, ListRow (inset-grouped row with chevron).
 - src/components/states: LoadingState, ErrorState (message + Retry button), EmptyState (icon, title, message, optional action), OfflineBanner (placeholder, just UI).
 - src/components/checkins/MetricTile: Apple Health Summary tile with icon + category label in category color, timestamp right, big value + unit.
-Create a temporary screens/KitchenSinkScreen.tsx rendering every component in light mode, and render it from App.tsx.
+Create a temporary src/screens/KitchenSinkScreen.tsx rendering every component, and render it from src/app/(tabs)/index.tsx.
 ```
 
 **Checkpoint ✅**
@@ -128,10 +126,17 @@ Phase 3 only.
 3. src/api/authApi.ts and checkinsApi.ts: thin typed functions that call the mock server, the only thing the app imports.
 4. src/stores/authStore.ts (Zustand): { status: 'hydrating'|'signedOut'|'signedIn', user, token, pendingDeepLink, login(), logout(), hydrate() }. Token in SecureStore, user in AsyncStorage. logout clears token and user (later phases add: checkinsStore, outboxStore, filterStore resets; give each store a reset() now).
    LoginScreen uses a custom useLogin() hook: { login, isSubmitting, error } with a useRef lock against double submit.
-5. src/navigation: typed RootStackParamList; RootNavigator shows a splash/loading while hydrating, Login when signedOut, else MainTabs (Summary, Check-ins) + stack screens CheckinDetail, CheckinForm (modal presentation), NotFound. Export navigationRef. Placeholder screens for now except Login.
+5. Expo Router setup per the src/app/ tree in CLAUDE.md:
+   - src/app/_layout.tsx: call authStore.hydrate() once; keep the splash screen visible while status === 'hydrating' (no login flash). Then <Stack> with
+     <Stack.Protected guard={status === 'signedIn'}> (tabs), checkin/new, checkin/[id]/index, checkin/[id]/edit </Stack.Protected>
+     <Stack.Protected guard={status === 'signedOut'}> login </Stack.Protected>
+   - export const unstable_settings = { initialRouteName: '(tabs)' } so a deep-linked detail screen has the tabs beneath it.
+   - checkin/new and checkin/[id]/edit use presentation: 'modal'.
+   - (tabs)/_layout.tsx: two tabs, Summary (heart icon) and Check-ins (list icon), Apple-style tab bar (tint color, hairline top border).
+   - Route files are thin: they render the screen component from src/screens. Placeholder screens for now except Login.
 6. LoginScreen: Apple style large title "Health" with a heart icon in brand color, inset-grouped email/password fields, react-hook-form + loginSchema, inline errors, server error ("Incorrect email or password") shown under the form, Button disabled + spinner while submitting (no double submit), keyboard handling (KeyboardAvoidingView, returnKeyType next/go). Small footnote showing demo credentials.
 7. Summary tab placeholder: LargeTitleHeader with avatar button that opens an action sheet / Alert with "Sign out".
-Remove the kitchen sink screen from App.tsx (keep the file for reference or delete).
+Stop rendering the kitchen sink from the Summary tab (keep the file for reference or delete it).
 ```
 
 **Checkpoint ✅**
@@ -160,13 +165,13 @@ Phase 4 only (online behavior; offline comes in Phase 6, but keep the shape read
    - useCheckin(id): local state; first returns the item from checkinsStore instantly if present (no spinner), then fetches detail in the background; NotFoundError -> status 'notFound'. Uses an isMounted/requestId guard.
    - useSubmitLock(): returns { run(fn), isSubmitting } using a useRef lock + state; run() returns early while locked.
    - useCreateCheckin / useUpdateCheckin / useDeleteCheckin built on useSubmitLock; on success upsert/remove in checkinsStore (so list + dashboard update instantly). Delete is optimistic: remove first, restore the item on error and show the error.
-4. CheckinListScreen ("Check-ins" large title, "+" header button):
+5. CheckinListScreen ("Check-ins" large title, "+" header button -> router.push('/checkin/new'); row tap -> router.push(`/checkin/${id}`)):
    - FlatList of memoized CheckinRow (Apple inset-grouped style: date as headline, a row of small colored metric values weight/steps/sleep/water, mood icon (Ionicons happy/remove-circle/sad outline in mind color), chevron).
    - Toolbar above list: SegmentedControl Latest|Oldest, horizontal mood Chips (multi-select), "Date range" chip that opens from/to date pickers, with a "Clear" action. Filter state in src/stores/filterStore.ts; list = useMemo(applyFilters(...)).
    - States: LoadingState first load only; ErrorState with Retry (refetch); if refetch fails but cached data exists, keep the list and show a small inline error bar instead; EmptyState "No check-ins yet" + "Add check-in" button; a different EmptyState "No check-ins match your filters" + "Clear filters".
-5. CheckinDetailScreen: grouped sections like Apple Health's data detail. Big weight header, then rows for height, BMI, sleep, steps, water, mood, notes, date. Header "Edit" button; destructive "Delete Check-in" row at the bottom with a confirm Alert. Loading/error states; NotFoundError shows "Check-in not found" EmptyState with "Back to Check-ins".
-6. CheckinFormScreen (create + edit, same screen via route param): react-hook-form + checkinFormSchema, numeric keyboards, MoodPicker (three large selectable tiles with icons + labels), date field opening datetimepicker (maximumDate today), notes multiline with char counter. Prefill height from the latest check-in on create. Save button in header and bottom; disabled + spinner while isSubmitting (useSubmitLock = duplicate prevention). On error show an inline banner with Retry; keep the user's input. On success go back.
-7. Accessibility labels on all rows/buttons.
+6. CheckinDetailScreen (id from useLocalSearchParams): grouped sections like Apple Health's data detail. Big weight header, then rows for height, BMI, sleep, steps, water, mood, notes, date. Header "Edit" button; destructive "Delete Check-in" row at the bottom with a confirm Alert. Loading/error states; NotFoundError shows "Check-in not found" EmptyState with "Back to Check-ins".
+7. CheckinFormScreen (one component used by both src/app/checkin/new.tsx and src/app/checkin/[id]/edit.tsx via a mode prop): react-hook-form + checkinFormSchema, numeric keyboards, MoodPicker (three large selectable tiles with icons + labels), date field opening datetimepicker (maximumDate today), notes multiline with char counter. Prefill height from the latest check-in on create. Save button in header and bottom; disabled + spinner while isSubmitting (useSubmitLock = duplicate prevention). On error show an inline banner with Retry; keep the user's input. On success router.back().
+8. Accessibility labels on all rows/buttons.
 ```
 
 **Checkpoint ✅**
@@ -252,17 +257,18 @@ Phase 6 only. Implement offline per CLAUDE.md.
 
 **Prompt:**
 ```
-Phase 7 only. Deep link healthtracker://checkin/:id.
-1. hooks/useDeepLinkHandler (mounted in App root):
-   - Cold start: Linking.getInitialURL(); warm start: Linking.addEventListener('url').
-   - Parse with Linking.parse / a small parseDeepLink(url) -> { type: 'checkin', id } | null (pure, unit tested in domain/deepLink.ts).
-   - Store as authStore.pendingDeepLink.
-   - Effect: when status === 'signedIn' && navigationRef.isReady() && pendingDeepLink -> navigate to MainTabs > Check-ins, then push CheckinDetail {id}; clear pendingDeepLink. Ensure back button returns to the list, not exits.
-   - If signed out: Login screen shows a small note "Sign in to open the shared check-in". After login the effect fires.
-2. CheckinDetail must handle ids for: server items, local pending items (look in outbox first), and non-existent ids -> "Check-in not found" state with button to the list.
-3. Don't double-handle: do not also pass a linking config that maps the same path (or if you add one for typing, make sure only one path navigates).
-4. Tests for parseDeepLink: valid, trailing slash, missing id, wrong host, garbage.
-5. Add the adb test commands to README draft.
+Phase 7 only. Deep link healthtracker://checkin/:id with Expo Router.
+Expo Router already maps healthtracker://checkin/123 -> src/app/checkin/[id]/index.tsx on cold AND warm start (scheme set in app.json). Our job is the auth gating, the pending link and the edge cases:
+1. src/domain/deepLink.ts: pure parseDeepLink(url) -> { type: 'checkin', id } | null (handles trailing slash, query strings, missing id, wrong path, garbage). Unit tests in deepLink.test.ts.
+2. hooks/useDeepLinkHandler (mounted once in src/app/_layout.tsx):
+   - const url = Linking.useURL() from expo-linking (initial URL on cold start, then each new URL on warm start).
+   - If status is 'signedOut' (or still 'hydrating') and parseDeepLink(url) is a checkin -> authStore.setPendingDeepLink(id). Stack.Protected will show Login.
+   - When status becomes 'signedIn' and pendingDeepLink exists -> router.push(`/checkin/${id}`) and clear it (exactly once; guard with a ref).
+   - LoginScreen shows a small note "Sign in to open the shared check-in" when pendingDeepLink is set.
+3. Back behavior: unstable_settings.initialRouteName = '(tabs)' in src/app/_layout.tsx, so Back from a deep-linked detail goes to the tabs, not out of the app. Verify.
+4. CheckinDetail must handle ids for: server items, local pending items (look in outbox first), and non-existent ids -> "Check-in not found" state with "Go to Check-ins" (router.replace('/(tabs)/checkins')).
+5. src/app/+not-found.tsx: friendly screen for unknown paths (e.g. healthtracker://whatever) with a button home.
+6. Add the adb test commands to the README draft.
 ```
 
 **Checkpoint ✅** (set `PKG=com.<myname>.healthtracker`, and get a real id from the detail screen or a console log)
@@ -270,6 +276,7 @@ Phase 7 only. Deep link healthtracker://checkin/:id.
 - [ ] **Cold, signed in:** `adb shell am force-stop $PKG` then the same command: it opens straight to the detail screen
 - [ ] **Cold, signed out:** sign out, force-stop, run the link: Login shows the note, and logging in lands on the detail screen
 - [ ] **Not found:** `healthtracker://checkin/doesnotexist` shows the not-found state, not a crash
+- [ ] **Unknown path:** `healthtracker://banana` shows the +not-found screen
 - [ ] Test cold start again on a **release build** (`npx expo run:android --variant release`), because the dev client's launcher can swallow cold-start URLs
 
 **Commit:** `feat(deeplink): checkin deep link with cold/warm start and auth gating`
@@ -292,7 +299,7 @@ List anything you found and fixed.
 ```
 
 **Checkpoint ✅**: run the full flow once from a clean install (uninstall, then reinstall)
-- [ ] `npm test` and `npx tsc --noEmit` are clean
+- [ ] `npm test`, `npx tsc --noEmit` and `npx expo lint` are clean
 - [ ] Logging out of demo and into new@ shows **no data leaking** from demo
 
 **Commit:** `refactor: hardening pass: error boundary, a11y, re-render fixes`
@@ -348,7 +355,8 @@ Write README.md with sections: Overview + screenshots placeholder; Setup & run (
 - What happens if the sync request succeeds on the server but the response is lost? (Idempotent `clientId`.)
 - What stops two syncs running at once? (In-flight lock.)
 - How does the dashboard update after an edit? (Same query cache, and the stats are derived with `useMemo`.)
-- Cold vs warm deep link: which API handles which? What if the user isn't logged in?
+- Cold vs warm deep link: how does Expo Router resolve the URL to a screen? (The file path is the URL: `getInitialURL` handles cold start, the `url` event handles warm start, and `Linking.useURL` wraps both.) What if the user isn't logged in? (`Stack.Protected` redirects to Login, the pending link is saved, and we push it after login.)
+- Why Expo Router over plain React Navigation? (It's file-based, deep links come built in, routes are typed, and it's Expo's default. It's built on React Navigation, so stacks, tabs and options are the same concepts.)
 - How do you prevent double submission? (`useSubmitLock`: a ref lock plus `isSubmitting` disables the button, with the idempotency key as a backstop.)
 - Why is the token in SecureStore while check-ins are in AsyncStorage?
 - How did you avoid unnecessary re-renders in the list?
