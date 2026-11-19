@@ -27,6 +27,8 @@ export interface Checkin {
   syncStatus: SyncStatus;
   syncError?: string;
   syncAttempts?: number;
+  /** Outbox items only: epoch ms before which the sync engine will not try again (backoff). */
+  nextRetryAt?: number;
 }
 
 /** The fields a user fills in on the form. Everything else is set by the app or the server. */

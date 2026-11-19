@@ -9,6 +9,7 @@ import { makeCheckin } from '../test-utils/makeCheckin';
 import { useAuthStore } from './authStore';
 import { useCheckinsStore } from './checkinsStore';
 import { useFilterStore } from './filterStore';
+import { useOutboxStore } from './outboxStore';
 
 const demo = { email: 'demo@health.app', password: 'Password123' };
 
@@ -111,5 +112,14 @@ describe('authStore', () => {
 
     expect(useCheckinsStore.getState().items).toEqual([]);
     expect(useFilterStore.getState().moods).toEqual([]);
+  });
+
+  it("logout also empties the outbox, so one account's unsynced check-ins are never sent to the next", async () => {
+    await useAuthStore.getState().login(demo);
+    useOutboxStore.getState().add(makeCheckin({ id: 'local_x', clientId: 'x', syncStatus: 'pending' }));
+
+    await useAuthStore.getState().logout();
+
+    expect(useOutboxStore.getState().items).toEqual([]);
   });
 });

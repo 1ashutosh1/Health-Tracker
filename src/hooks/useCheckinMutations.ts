@@ -48,7 +48,10 @@ function useMutation<Args extends unknown[]>(action: (...args: Args) => Promise<
   return { mutate, isSubmitting, error, reset };
 }
 
-/** Saves a new check-in, then adds it to the store so the list shows it instantly. */
+/**
+ * Saves a new check-in. A saved one goes into checkinsStore so the list shows it instantly.
+ * A pending one (made offline) is already in the outbox, which the list reads too; adding it here as well would show it twice.
+ */
 export function useCreateCheckin(): UseMutationResult<[fields: CheckinFields]> {
   const upsert = useCheckinsStore((s) => s.upsert);
 
@@ -57,7 +60,7 @@ export function useCreateCheckin(): UseMutationResult<[fields: CheckinFields]> {
       const userId = currentUserId();
       const saved = await checkinRepository.create(fields);
       // Signed out while saving: the account's data must not land in the next user's store.
-      if (currentUserId() === userId) upsert(saved);
+      if (saved.syncStatus === 'synced' && currentUserId() === userId) upsert(saved);
     },
     [upsert],
   );
@@ -65,7 +68,7 @@ export function useCreateCheckin(): UseMutationResult<[fields: CheckinFields]> {
   return useMutation(create);
 }
 
-/** Saves changes to one check-in, then replaces it in the store. */
+/** Saves changes to one check-in, then replaces it in the store (a pending one is edited in the outbox instead). */
 export function useUpdateCheckin(id: string): UseMutationResult<[fields: CheckinFields]> {
   const upsert = useCheckinsStore((s) => s.upsert);
 
@@ -74,7 +77,7 @@ export function useUpdateCheckin(id: string): UseMutationResult<[fields: Checkin
       const userId = currentUserId();
       // `notes` is listed explicitly: clearing the notes box must send "no notes", not leave the old text.
       const saved = await checkinRepository.update(id, { ...fields, notes: fields.notes });
-      if (currentUserId() === userId) upsert(saved);
+      if (saved.syncStatus === 'synced' && currentUserId() === userId) upsert(saved);
     },
     [id, upsert],
   );
@@ -91,6 +94,8 @@ export function useDeleteCheckin(id: string): UseMutationResult<[]> {
   const removeLocal = useCheckinsStore((s) => s.removeLocal);
 
   const remove = useCallback(async () => {
+    // Check first: offline, a synced check-in must stay on screen instead of vanishing and coming back.
+    checkinRepository.assertEditable(id);
     const userId = currentUserId();
     const previous = useCheckinsStore.getState().items.find((c) => c.id === id);
     removeLocal(id);

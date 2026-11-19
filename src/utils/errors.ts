@@ -28,6 +28,9 @@ export class NotFoundError extends ApiError {
   }
 }
 
+/** Shown when someone edits or deletes a check-in the server already has, without a connection. */
+export const OFFLINE_EDIT_MESSAGE = "You're offline. Reconnect to edit synced check-ins.";
+
 // What React Native's fetch throws when the network is down.
 const FETCH_NETWORK_FAILURE = /network request failed|failed to fetch|network error/i;
 

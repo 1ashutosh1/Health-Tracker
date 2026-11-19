@@ -11,6 +11,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 
 import { useNetworkMonitor } from '../hooks/useNetworkMonitor';
+import { useNetworkSync } from '../hooks/useNetworkSync';
 import { useAuthStore } from '../stores/authStore';
 import { fontFamily } from '../theme/typography';
 import { useTheme } from '../theme/useTheme';
@@ -27,8 +28,9 @@ export default function RootLayout() {
   const status = useAuthStore((s) => s.status);
   const hydrate = useAuthStore((s) => s.hydrate);
 
-  // Keeps networkStore in step with NetInfo for the whole life of the app.
+  // Both run for the whole life of the app. Syncing only does anything while a user is signed in.
   useNetworkMonitor();
+  useNetworkSync();
 
   const [fontsLoaded, fontError] = useFonts({
     Inter_400Regular,

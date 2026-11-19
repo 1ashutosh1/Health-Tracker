@@ -15,6 +15,8 @@ const second = makeCheckin({ id: 'ck_2', checkinDate: '2026-02-01', weightKg: 75
 beforeEach(() => {
   jest.resetAllMocks();
   useCheckinsStore.getState().reset();
+  // Reading the saved copy from disk is async; these tests are about what happens after it.
+  useCheckinsStore.setState({ hasHydrated: true });
   useAuthStore.setState({ status: 'signedIn', user: { id: 'u1', email: 'a@b.c', name: 'A' } });
 });
 
