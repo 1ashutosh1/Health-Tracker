@@ -1,9 +1,6 @@
-import { Text, View } from 'react-native';
+import { KitchenSinkScreen } from '../../screens/KitchenSinkScreen';
 
+// Temporary: becomes SummaryScreen in Phase 4.
 export default function SummaryRoute() {
-  return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-      <Text>Hello Traya</Text>
-    </View>
-  );
+  return <KitchenSinkScreen />;
 }
