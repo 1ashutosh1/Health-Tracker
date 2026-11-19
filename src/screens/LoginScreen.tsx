@@ -1,8 +1,15 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Ionicons } from '@expo/vector-icons';
-import { useRef, type ComponentRef, type Ref } from 'react';
+import { useRef, useState, type ComponentRef, type ReactNode, type Ref } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { KeyboardAvoidingView, StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Pressable,
+  StyleSheet,
+  TextInput,
+  View,
+  type TextInputProps,
+} from 'react-native';
 
 import { Button } from '../components/ui/Button';
 import { Screen } from '../components/ui/Screen';
@@ -17,10 +24,12 @@ interface GroupedFieldProps extends Omit<TextInputProps, 'style'> {
   label: string;
   /** The ref is a normal prop so the email field can move focus to the password field. */
   inputRef?: Ref<ComponentRef<typeof TextInput>>;
+  /** Optional control shown at the end of the row (for example the show-password eye). */
+  trailing?: ReactNode;
 }
 
 /** One row of an inset-grouped form: label on the left, input filling the rest. */
-function GroupedField({ label, inputRef, ...inputProps }: GroupedFieldProps) {
+function GroupedField({ label, inputRef, trailing, ...inputProps }: GroupedFieldProps) {
   const { colors } = useTheme();
 
   return (
@@ -36,6 +45,7 @@ function GroupedField({ label, inputRef, ...inputProps }: GroupedFieldProps) {
         selectionColor={colors.tint}
         style={[styles.fieldInput, typography.body, { color: colors.label }]}
       />
+      {trailing}
     </View>
   );
 }
@@ -43,6 +53,7 @@ function GroupedField({ label, inputRef, ...inputProps }: GroupedFieldProps) {
 export function LoginScreen() {
   const { colors } = useTheme();
   const { login, isSubmitting, error: serverError, reset: clearServerError } = useLogin();
+  const [showPassword, setShowPassword] = useState(false);
   const passwordRef = useRef<ComponentRef<typeof TextInput>>(null);
 
   const {
@@ -114,7 +125,22 @@ export function LoginScreen() {
                 }}
                 onBlur={field.onBlur}
                 editable={!isSubmitting}
-                secureTextEntry
+                secureTextEntry={!showPassword}
+                trailing={
+                  <Pressable
+                    onPress={() => setShowPassword((visible) => !visible)}
+                    accessibilityRole="button"
+                    accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+                    hitSlop={8}
+                    style={styles.eyeButton}
+                  >
+                    <Ionicons
+                      name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                      size={22}
+                      color={colors.secondaryLabel}
+                    />
+                  </Pressable>
+                }
                 autoCapitalize="none"
                 autoCorrect={false}
                 autoComplete="current-password"
@@ -175,6 +201,13 @@ const styles = StyleSheet.create({
   },
   fieldLabel: { width: 92 },
   fieldInput: { flex: 1, minHeight: layout.minHitTarget, paddingVertical: 0 },
+  eyeButton: {
+    width: layout.minHitTarget,
+    height: layout.minHitTarget,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: -spacing.sm,
+  },
   separator: { height: StyleSheet.hairlineWidth, marginLeft: spacing.md },
   messages: { gap: spacing.xs, marginTop: spacing.sm, paddingHorizontal: spacing.xs },
   button: { marginTop: spacing.md },
