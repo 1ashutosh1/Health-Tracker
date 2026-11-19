@@ -74,3 +74,13 @@ export function computeDashboardStats(checkins: readonly Checkin[]): DashboardSt
     history: sorted.map((c) => ({ date: c.checkinDate, weightKg: c.weightKg })),
   };
 }
+
+/** Outside this range the form shows a gentle "are you sure?" hint. It never blocks saving. */
+export const TYPICAL_SLEEP_HOURS = { min: 3, max: 14 } as const;
+
+export function getSleepWarning(hours: number): string | null {
+  if (!Number.isFinite(hours)) return null;
+  if (hours < TYPICAL_SLEEP_HOURS.min) return 'That is very little sleep. Double-check the number.';
+  if (hours > TYPICAL_SLEEP_HOURS.max) return 'That is a lot of sleep. Double-check the number.';
+  return null;
+}

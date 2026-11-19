@@ -38,6 +38,8 @@ interface ListRowProps {
   /** Rows without onPress are static: no chevron, not announced as buttons. */
   onPress?: () => void;
   accessibilityLabel?: string;
+  /** Red title and no chevron, for actions like "Delete". */
+  destructive?: boolean;
 }
 
 export function ListRow({
@@ -47,13 +49,14 @@ export function ListRow({
   iconColor = 'tint',
   onPress,
   accessibilityLabel,
+  destructive = false,
 }: ListRowProps) {
   const { colors } = useTheme();
 
   const content = (
     <>
       {icon ? <Ionicons name={icon} size={22} color={resolveColor(colors, iconColor)} /> : null}
-      <Text variant="body" style={styles.title}>
+      <Text variant="body" color={destructive ? 'destructive' : 'label'} style={styles.title}>
         {title}
       </Text>
       {value ? (
@@ -61,7 +64,7 @@ export function ListRow({
           {value}
         </Text>
       ) : null}
-      {onPress ? <Ionicons name="chevron-forward" size={18} color={colors.tertiaryLabel} /> : null}
+      {onPress && !destructive ? <Ionicons name="chevron-forward" size={18} color={colors.tertiaryLabel} /> : null}
     </>
   );
 

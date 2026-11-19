@@ -12,3 +12,9 @@ export interface CreateCheckinRequest extends CheckinFields {
 }
 
 export type UpdateCheckinRequest = Partial<CheckinFields>;
+
+/** The state of any async load. Every data hook reports one of these. */
+export type AsyncStatus = 'idle' | 'loading' | 'success' | 'error';
+
+/** `useCheckin` adds one more: the server says this check-in does not exist. */
+export type DetailStatus = AsyncStatus | 'notFound';

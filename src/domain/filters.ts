@@ -3,6 +3,11 @@ import { endOfDay, parseISO, startOfDay } from 'date-fns';
 import type { Checkin, CheckinFilters } from '../types/checkin';
 import { compareCheckins } from './health';
 
+/** True if anything narrows the list. Sorting alone does not count: it hides nothing. */
+export function hasActiveFilters({ moods, from, to }: CheckinFilters): boolean {
+  return moods.length > 0 || from !== undefined || to !== undefined;
+}
+
 /**
  * Filters by mood and date range, then sorts. Returns a new array.
  * - No moods selected means every mood.

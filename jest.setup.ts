@@ -21,3 +21,6 @@ jest.mock('expo-secure-store', () => {
     }),
   };
 });
+
+// Icons are drawn by a native font. Tests only care that a screen renders, so stub them out.
+jest.mock('@expo/vector-icons', () => ({ Ionicons: () => null }));

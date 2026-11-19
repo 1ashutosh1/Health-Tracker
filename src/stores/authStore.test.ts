@@ -5,7 +5,10 @@ import { STORAGE_KEYS } from '../storage/keys';
 import { getToken } from '../storage/secureStorage';
 import { getItem } from '../storage/storage';
 import type { User } from '../types/auth';
+import { makeCheckin } from '../test-utils/makeCheckin';
 import { useAuthStore } from './authStore';
+import { useCheckinsStore } from './checkinsStore';
+import { useFilterStore } from './filterStore';
 
 const demo = { email: 'demo@health.app', password: 'Password123' };
 
@@ -97,5 +100,16 @@ describe('authStore', () => {
     useAuthStore.getState().setPendingDeepLink('healthtracker://checkin/ck_1');
     await useAuthStore.getState().login(demo);
     expect(useAuthStore.getState().pendingDeepLink).toBe('healthtracker://checkin/ck_1');
+  });
+
+  it("logout wipes the previous user's check-ins and filters so the next account never sees them", async () => {
+    await useAuthStore.getState().login(demo);
+    useCheckinsStore.getState().upsert(makeCheckin());
+    useFilterStore.getState().toggleMood('sad');
+
+    await useAuthStore.getState().logout();
+
+    expect(useCheckinsStore.getState().items).toEqual([]);
+    expect(useFilterStore.getState().moods).toEqual([]);
   });
 });

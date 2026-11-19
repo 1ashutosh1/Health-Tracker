@@ -4,5 +4,5 @@ import { CheckinFormScreen } from '../../../screens/CheckinFormScreen';
 
 export default function EditCheckinRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  return <CheckinFormScreen checkinId={id} />;
+  return <CheckinFormScreen mode="edit" checkinId={id} />;
 }

@@ -1,6 +1,6 @@
 import { makeCheckin } from '../test-utils/makeCheckin';
 import type { CheckinFilters } from '../types/checkin';
-import { applyFilters } from './filters';
+import { applyFilters, hasActiveFilters } from './filters';
 
 const jan1 = makeCheckin({ id: 'jan1', mood: 'happy', checkinDate: '2026-01-01' });
 const jan15 = makeCheckin({ id: 'jan15', mood: 'sad', checkinDate: '2026-01-15' });
@@ -142,5 +142,18 @@ describe('applyFilters: combined', () => {
       to: new Date(2026, 11, 31),
     });
     expect(ids(result)).toEqual(['mar1']);
+  });
+});
+
+describe('hasActiveFilters', () => {
+  it('is false for the default filters, whatever the sort order', () => {
+    expect(hasActiveFilters(base)).toBe(false);
+    expect(hasActiveFilters({ ...base, sort: 'oldest' })).toBe(false);
+  });
+
+  it('is true when a mood or either date end is set', () => {
+    expect(hasActiveFilters({ ...base, moods: ['sad'] })).toBe(true);
+    expect(hasActiveFilters({ ...base, from: new Date(2026, 0, 1) })).toBe(true);
+    expect(hasActiveFilters({ ...base, to: new Date(2026, 0, 1) })).toBe(true);
   });
 });

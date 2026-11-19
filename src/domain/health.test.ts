@@ -1,5 +1,5 @@
 import { makeCheckin } from '../test-utils/makeCheckin';
-import { calculateBMI, compareCheckins, computeDashboardStats, getBMICategory } from './health';
+import { calculateBMI, compareCheckins, computeDashboardStats, getBMICategory, getSleepWarning } from './health';
 
 describe('calculateBMI', () => {
   it('computes 70 kg at 175 cm as 22.9', () => {
@@ -178,5 +178,24 @@ describe('computeDashboardStats', () => {
     const before = [...input];
     computeDashboardStats(input);
     expect(input).toEqual(before);
+  });
+});
+
+describe('getSleepWarning', () => {
+  it('warns below 3 hours and above 14 hours', () => {
+    expect(getSleepWarning(2.9)).toMatch(/very little/);
+    expect(getSleepWarning(0)).toMatch(/very little/);
+    expect(getSleepWarning(14.1)).toMatch(/a lot/);
+    expect(getSleepWarning(24)).toMatch(/a lot/);
+  });
+
+  it('does not warn from 3 to 14 hours inclusive', () => {
+    expect(getSleepWarning(3)).toBeNull();
+    expect(getSleepWarning(8)).toBeNull();
+    expect(getSleepWarning(14)).toBeNull();
+  });
+
+  it('does not warn for a non-number', () => {
+    expect(getSleepWarning(NaN)).toBeNull();
   });
 });

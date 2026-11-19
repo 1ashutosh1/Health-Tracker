@@ -5,6 +5,8 @@ import { STORAGE_KEYS } from '../storage/keys';
 import { clearToken, getToken, setToken } from '../storage/secureStorage';
 import { getItem, removeItem, setItem } from '../storage/storage';
 import type { LoginCredentials, User } from '../types/auth';
+import { useCheckinsStore } from './checkinsStore';
+import { useFilterStore } from './filterStore';
 
 export type AuthStatus = 'hydrating' | 'signedOut' | 'signedIn';
 
@@ -65,7 +67,9 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   logout: async () => {
     // Clear storage first: if the app is killed mid-logout, the next launch is signed out, not signed in.
     await clearSavedSession();
-    // Later phases: also reset checkinsStore, outboxStore and filterStore here.
+    // Nothing from this account may be visible to the next one. (outboxStore joins in the offline phase.)
+    useCheckinsStore.getState().reset();
+    useFilterStore.getState().reset();
     get().reset();
   },
 
