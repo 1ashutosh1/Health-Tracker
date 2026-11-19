@@ -1,4 +1,4 @@
-import { ApiError, isNetworkError, NetworkError, NotFoundError } from './errors';
+import { ApiError, getErrorMessage, isNetworkError, NetworkError, NotFoundError } from './errors';
 
 describe('error classes', () => {
   it('ApiError carries the HTTP status and works with instanceof', () => {
@@ -47,5 +47,23 @@ describe('isNetworkError', () => {
     expect(isNetworkError('Network request failed')).toBe(false);
     expect(isNetworkError(null)).toBe(false);
     expect(isNetworkError(undefined)).toBe(false);
+  });
+});
+
+describe('getErrorMessage', () => {
+  it('uses the message of API and network errors', () => {
+    expect(getErrorMessage(new ApiError(401, 'Incorrect email or password'))).toBe('Incorrect email or password');
+    expect(getErrorMessage(new NetworkError('Offline'))).toBe('Offline');
+  });
+
+  it('turns a raw fetch failure into the friendly network message', () => {
+    expect(getErrorMessage(new TypeError('Network request failed'))).toBe(new NetworkError().message);
+  });
+
+  it('hides unknown errors behind the fallback', () => {
+    expect(getErrorMessage(new Error('undefined is not a function'))).toBe(
+      'Something went wrong. Please try again.',
+    );
+    expect(getErrorMessage('boom', 'Custom fallback')).toBe('Custom fallback');
   });
 });

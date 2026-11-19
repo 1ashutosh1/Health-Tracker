@@ -1,6 +1,5 @@
-import { KitchenSinkScreen } from '../../screens/KitchenSinkScreen';
+import { SummaryScreen } from '../../screens/SummaryScreen';
 
-// Temporary: becomes SummaryScreen in Phase 4.
 export default function SummaryRoute() {
-  return <KitchenSinkScreen />;
+  return <SummaryScreen />;
 }

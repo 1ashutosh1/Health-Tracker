@@ -36,3 +36,10 @@ export function isNetworkError(error: unknown): boolean {
   if (error instanceof NetworkError) return true;
   return error instanceof TypeError && FETCH_NETWORK_FAILURE.test(error.message);
 }
+
+/** A message that is safe to show the user. Unknown errors never leak internals. */
+export function getErrorMessage(error: unknown, fallback = 'Something went wrong. Please try again.'): string {
+  if (error instanceof ApiError || error instanceof NetworkError) return error.message;
+  if (isNetworkError(error)) return new NetworkError().message;
+  return fallback;
+}
