@@ -1,4 +1,4 @@
-import { isStale, STALE_AFTER_MS } from './cache';
+import { isPersistedItems, isStale, STALE_AFTER_MS } from './cache';
 
 describe('isStale', () => {
   const now = 1_000_000;
@@ -18,5 +18,16 @@ describe('isStale', () => {
 
   it('accepts a custom time to live', () => {
     expect(isStale(now - 5_000, now, 1_000)).toBe(true);
+  });
+});
+
+describe('isPersistedItems', () => {
+  it('accepts an object with an items array', () => {
+    expect(isPersistedItems({ items: [] })).toBe(true);
+    expect(isPersistedItems({ items: [{ id: 'a' }], lastFetchedAt: 1 })).toBe(true);
+  });
+
+  it.each([undefined, null, 'text', 42, {}, { items: 'nope' }, { items: null }, []])('rejects %p', (value) => {
+    expect(isPersistedItems(value)).toBe(false);
   });
 });

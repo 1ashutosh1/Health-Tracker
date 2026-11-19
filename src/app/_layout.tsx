@@ -10,6 +10,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 
+import { useNetworkMonitor } from '../hooks/useNetworkMonitor';
 import { useAuthStore } from '../stores/authStore';
 import { fontFamily } from '../theme/typography';
 import { useTheme } from '../theme/useTheme';
@@ -25,6 +26,9 @@ export default function RootLayout() {
   const { colors } = useTheme();
   const status = useAuthStore((s) => s.status);
   const hydrate = useAuthStore((s) => s.hydrate);
+
+  // Keeps networkStore in step with NetInfo for the whole life of the app.
+  useNetworkMonitor();
 
   const [fontsLoaded, fontError] = useFonts({
     Inter_400Regular,

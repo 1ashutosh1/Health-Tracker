@@ -27,3 +27,11 @@ export async function updateCheckin(id: string, changes: UpdateCheckinRequest): 
 export async function deleteCheckin(id: string): Promise<void> {
   return server.deleteCheckin(await getToken(), id);
 }
+
+/**
+ * True while the developer has switched the fake connection off (see `devConfig` in mockServer).
+ * The network monitor reads this so the whole app goes offline together, not just the requests.
+ */
+export function isForcedOffline(): boolean {
+  return server.devConfig.forceOffline;
+}
