@@ -8,9 +8,33 @@ The backend is a **mock REST server that runs inside the app** (own persisted da
 
 ### Screenshots
 
-| Summary | Check-ins | Detail | Offline + pending |
-|---|---|---|---|
-| _screenshot_ | _screenshot_ | _screenshot_ | _screenshot_ |
+<table>
+  <tr>
+    <td align="center" valign="top" width="33%">
+      <img src="docs/screenshots/login.png" width="220" alt="Sign-in screen with the demo account filled in"><br>
+      <b>Sign in</b><br><sub>Demo accounts listed on screen</sub>
+    </td>
+    <td align="center" valign="top" width="33%">
+      <img src="docs/screenshots/summary.png" width="220" alt="Summary dashboard: weight card with a one-month chart, starting weight, weight change, BMI and total check-ins"><br>
+      <b>Summary</b><br><sub>Weight chart (W / M / 6M / All), trend as arrow + text</sub>
+    </td>
+    <td align="center" valign="top" width="33%">
+      <img src="docs/screenshots/checkins.png" width="220" alt="Check-in list sorted by latest, with mood filters and a row per day"><br>
+      <b>Check-ins</b><br><sub>Latest / Oldest sort, mood and date filters</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" valign="top" width="33%">
+      <img src="docs/screenshots/checkin-detail.png" width="220" alt="Check-in detail with a Synced badge, weight, height, BMI, sleep, steps, water, mood and date"><br>
+      <b>Check-in detail</b><br><sub>Deep-link target, shows sync status</sub>
+    </td>
+    <td align="center" valign="top" width="33%">
+      <img src="docs/screenshots/new-checkin.png" width="220" alt="New check-in form with date, weight, height, sleep, steps, water, mood and notes"><br>
+      <b>New check-in</b><br><sub>Validated with zod, height pre-filled</sub>
+    </td>
+    <td width="33%"></td>
+  </tr>
+</table>
 
 Demo video: _link_
 
