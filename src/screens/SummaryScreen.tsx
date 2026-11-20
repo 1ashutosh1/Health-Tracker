@@ -23,7 +23,6 @@ import type { ChartRange } from '../types/checkin';
 
 /** Apple Health "Summary" tab. Every number comes from useDashboardStats; this file only decides what to show. */
 export function SummaryScreen() {
-  throw new Error('test crash');
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
