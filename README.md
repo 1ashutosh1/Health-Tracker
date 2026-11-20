@@ -36,8 +36,6 @@ The backend is a **mock REST server that runs inside the app** (own persisted da
   </tr>
 </table>
 
-Demo video: _link_
-
 ---
 
 ## Setup & run
@@ -93,7 +91,7 @@ cd android && ./gradlew assembleRelease   # Windows: gradlew.bat assembleRelease
 adb install -r android/app/build/outputs/apk/release/app-release.apk
 ```
 
-The release build is signed with the debug keystore, which is fine for sideloading. It needs no server, because the mock server is inside the app. Pre-built APK: _link_
+The release build is signed with the debug keystore, which is fine for sideloading. It needs no server, because the mock server is inside the app. Pre-built APK: [download from Google Drive](https://drive.google.com/file/d/1g_B6YpZzqavRKus7o2RhwzhhuF8zGAMf/view?usp=sharing)
 
 ### Simulating bad networks
 
