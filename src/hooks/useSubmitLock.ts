@@ -1,5 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 
+import { useIsMounted } from './useIsMounted';
+
 /**
  * Stops a double tap from running an action twice.
  *
@@ -10,18 +12,23 @@ import { useCallback, useRef, useState } from 'react';
 export function useSubmitLock() {
   const locked = useRef(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isMounted = useIsMounted();
 
-  const run = useCallback(async <T>(fn: () => Promise<T>): Promise<T | undefined> => {
-    if (locked.current) return undefined;
-    locked.current = true;
-    setIsSubmitting(true);
-    try {
-      return await fn();
-    } finally {
-      locked.current = false;
-      setIsSubmitting(false);
-    }
-  }, []);
+  const run = useCallback(
+    async <T>(fn: () => Promise<T>): Promise<T | undefined> => {
+      if (locked.current) return undefined;
+      locked.current = true;
+      setIsSubmitting(true);
+      try {
+        return await fn();
+      } finally {
+        locked.current = false;
+        // The user may have left the screen while this was running.
+        if (isMounted()) setIsSubmitting(false);
+      }
+    },
+    [isMounted],
+  );
 
   return { run, isSubmitting };
 }

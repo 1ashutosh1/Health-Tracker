@@ -5,11 +5,12 @@ import {
   Inter_700Bold,
   useFonts,
 } from '@expo-google-fonts/inter';
-import { Stack } from 'expo-router';
+import { Stack, type ErrorBoundaryProps } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 
+import { CrashScreen } from '../components/states/CrashScreen';
 import { useDeepLinkHandler } from '../hooks/useDeepLinkHandler';
 import { useNetworkMonitor } from '../hooks/useNetworkMonitor';
 import { useNetworkSync } from '../hooks/useNetworkSync';
@@ -20,6 +21,12 @@ import { useTheme } from '../theme/useTheme';
 // A deep link straight to checkin/[id] still gets the tabs underneath it, so Back has somewhere to go.
 // ("anchor" replaces the deprecated "initialRouteName" in this Expo Router version.)
 export const unstable_settings = { anchor: '(tabs)' };
+
+// Expo Router wraps this layout, and so every screen under it, in an error boundary and shows this
+// export when something throws while rendering. "Restart" renders the app again from the top.
+export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  return <CrashScreen error={error} onRestart={() => void retry()} />;
+}
 
 // Keep the splash screen up until fonts and the saved session are ready, so neither the
 // system font nor the login screen ever flashes.

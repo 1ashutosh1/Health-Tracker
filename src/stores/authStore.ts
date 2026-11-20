@@ -73,6 +73,10 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     useCheckinsStore.getState().reset();
     useOutboxStore.getState().reset();
     useFilterStore.getState().reset();
+    // reset() makes the persist middleware save the now-empty state. Delete the keys too, so nothing of
+    // this account is left on disk. (filterStore is not persisted, so it has no key.)
+    useCheckinsStore.persist.clearStorage();
+    useOutboxStore.persist.clearStorage();
     get().reset();
   },
 

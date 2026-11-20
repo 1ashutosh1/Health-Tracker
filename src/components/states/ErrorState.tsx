@@ -10,9 +10,11 @@ interface ErrorStateProps {
   message: string;
   onRetry: () => void;
   title?: string;
+  /** The button's text. "Retry" for a failed load; the crash screen says "Restart". */
+  actionLabel?: string;
 }
 
-export function ErrorState({ message, onRetry, title = 'Something went wrong' }: ErrorStateProps) {
+export function ErrorState({ message, onRetry, title = 'Something went wrong', actionLabel = 'Retry' }: ErrorStateProps) {
   const { colors } = useTheme();
 
   return (
@@ -26,7 +28,7 @@ export function ErrorState({ message, onRetry, title = 'Something went wrong' }:
           {message}
         </Text>
       </View>
-      <Button title="Retry" variant="secondary" onPress={onRetry} style={styles.button} />
+      <Button title={actionLabel} variant="secondary" onPress={onRetry} style={styles.button} />
     </View>
   );
 }

@@ -3,6 +3,7 @@ import { useCallback, useRef, useState } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import type { LoginCredentials } from '../types/auth';
 import { getErrorMessage } from '../utils/errors';
+import { useIsMounted } from './useIsMounted';
 
 /**
  * Submit handler for the login form.
@@ -14,6 +15,7 @@ export function useLogin() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const lock = useRef(false);
+  const isMounted = useIsMounted();
 
   const login = useCallback(
     async (credentials: LoginCredentials) => {
@@ -23,15 +25,15 @@ export function useLogin() {
       setError(null);
       try {
         await signIn(credentials);
-        // On success the auth guard replaces this screen, so there is nothing more to do here.
       } catch (e) {
-        setError(getErrorMessage(e));
+        if (isMounted()) setError(getErrorMessage(e));
       } finally {
         lock.current = false;
-        setIsSubmitting(false);
+        // On success the auth guard has already replaced the login screen, so it is no longer mounted.
+        if (isMounted()) setIsSubmitting(false);
       }
     },
-    [signIn],
+    [signIn, isMounted],
   );
 
   const reset = useCallback(() => setError(null), []);

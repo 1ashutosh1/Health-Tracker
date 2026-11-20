@@ -9,6 +9,7 @@ import { useOutboxStore } from '../stores/outboxStore';
 import type { DetailStatus } from '../types/api';
 import type { Checkin } from '../types/checkin';
 import { getErrorMessage, isNetworkError, NetworkError, NotFoundError } from '../utils/errors';
+import { useIsMounted } from './useIsMounted';
 import { useIsOnline } from './useIsOnline';
 
 export interface UseCheckinResult {
@@ -70,6 +71,7 @@ export function useCheckin(id: string): UseCheckinResult {
   // Each request gets a number. A result is used only if it is still the latest request
   // (not superseded, not after unmount) and the same user is still signed in.
   const latestRequest = useRef(0);
+  const isMounted = useIsMounted();
 
   // Fetches and returns the screen state to show next, or null if this request was superseded.
   // It does not set state itself: callers apply the result in a callback, after the await.
@@ -108,22 +110,24 @@ export function useCheckin(id: string): UseCheckinResult {
   // Runs on mount, and again when the connection changes (back online: refresh the saved copy).
   useEffect(() => {
     void fetchLatest().then((next) => {
-      if (next) setFetchState(next);
+      if (next && isMounted()) setFetchState(next);
     });
     return () => {
       // Unmount: invalidate whatever is still in flight so it cannot touch state afterwards.
       latestRequest.current += 1;
     };
-  }, [fetchLatest]);
+  }, [fetchLatest, isMounted]);
 
   // The Retry button: put the screen back into a loading state, then run the same request.
   const refetch = useCallback(async () => {
     if (!isOnline) await refreshNetworkStatus();
+    // Left the screen while the connection was being checked: nothing to show a result on.
+    if (!isMounted()) return;
     const keepsCopy = hasCopy(id);
     setFetchState({ status: keepsCopy ? 'success' : 'loading', error: null, isRefreshing: keepsCopy && !isLocalId(id) });
     const next = await fetchLatest();
-    if (next) setFetchState(next);
-  }, [id, isOnline, fetchLatest]);
+    if (next && isMounted()) setFetchState(next);
+  }, [id, isOnline, fetchLatest, isMounted]);
 
   const copy = cached ?? followed ?? (lastSeen?.id === id ? lastSeen : null);
   // A device-only id with no copy anywhere (a stale link): nothing will ever load it.

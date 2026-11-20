@@ -7,6 +7,7 @@ import type { CreateCheckinRequest, UpdateCheckinRequest } from '../types/api';
 import type { AuthSession, User } from '../types/auth';
 import type { Checkin } from '../types/checkin';
 import { ApiError, NetworkError, NotFoundError } from '../utils/errors';
+import { logger } from '../utils/logger';
 import { buildSeedDb, isMockDb, type MockDb, type ServerCheckin } from './mockDb';
 
 /**
@@ -71,7 +72,7 @@ async function isOffline(): Promise<boolean> {
 
 /** Network behavior shared by every endpoint. Throws before the endpoint touches any data. */
 async function simulateRequest(label: string): Promise<void> {
-  if (__DEV__ && process.env.NODE_ENV !== 'test') console.log(`[mockServer] ${label}`);
+  logger.debug(`[mockServer] ${label}`);
 
   // A phone with no connection fails fast; it does not wait for the "server".
   if (await isOffline()) throw new NetworkError();

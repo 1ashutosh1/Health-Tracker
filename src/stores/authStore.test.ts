@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { waitFor } from '@testing-library/react-native';
 
 import { devConfig, resetMockServer } from '../api/mockServer';
 import { STORAGE_KEYS } from '../storage/keys';
@@ -121,5 +122,26 @@ describe('authStore', () => {
     await useAuthStore.getState().logout();
 
     expect(useOutboxStore.getState().items).toEqual([]);
+  });
+
+  it("logout deletes the saved check-in cache and outbox from disk, so the next launch cannot read them", async () => {
+    await useAuthStore.getState().login(demo);
+    useCheckinsStore.getState().upsert(makeCheckin());
+    useOutboxStore.getState().add(makeCheckin({ id: 'local_x', clientId: 'x', syncStatus: 'pending' }));
+    // The persist middleware writes asynchronously. Wait until both really are on disk.
+    await waitFor(async () => {
+      expect(await AsyncStorage.getAllKeys()).toEqual(
+        expect.arrayContaining([STORAGE_KEYS.checkinsCache, STORAGE_KEYS.outbox]),
+      );
+    });
+
+    await useAuthStore.getState().logout();
+
+    await waitFor(async () => {
+      const keys = await AsyncStorage.getAllKeys();
+      expect(keys).not.toContain(STORAGE_KEYS.checkinsCache);
+      expect(keys).not.toContain(STORAGE_KEYS.outbox);
+      expect(keys).not.toContain(STORAGE_KEYS.authUser);
+    });
   });
 });

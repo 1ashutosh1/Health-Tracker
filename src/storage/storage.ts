@@ -1,5 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import { logger } from '../utils/logger';
+
 /**
  * Typed JSON wrapper over AsyncStorage.
  * Storage can fail (disk full, corrupt value), and a broken cache must never crash the app.
@@ -10,7 +12,7 @@ export async function getItem<T>(key: string): Promise<T | null> {
     const raw = await AsyncStorage.getItem(key);
     return raw === null ? null : (JSON.parse(raw) as T);
   } catch (error) {
-    console.warn(`[storage] could not read "${key}"`, error);
+    logger.warn(`[storage] could not read "${key}"`, error);
     return null;
   }
 }
@@ -20,7 +22,7 @@ export async function setItem<T>(key: string, value: T): Promise<boolean> {
     await AsyncStorage.setItem(key, JSON.stringify(value));
     return true;
   } catch (error) {
-    console.warn(`[storage] could not write "${key}"`, error);
+    logger.warn(`[storage] could not write "${key}"`, error);
     return false;
   }
 }
@@ -30,7 +32,7 @@ export async function removeItem(key: string): Promise<boolean> {
     await AsyncStorage.removeItem(key);
     return true;
   } catch (error) {
-    console.warn(`[storage] could not remove "${key}"`, error);
+    logger.warn(`[storage] could not remove "${key}"`, error);
     return false;
   }
 }

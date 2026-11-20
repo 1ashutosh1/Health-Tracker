@@ -5,6 +5,7 @@ import { useAuthStore } from '../stores/authStore';
 import { useCheckinsStore } from '../stores/checkinsStore';
 import type { CheckinFields } from '../types/checkin';
 import { getErrorMessage, NotFoundError } from '../utils/errors';
+import { useIsMounted } from './useIsMounted';
 import { useSubmitLock } from './useSubmitLock';
 
 export interface UseMutationResult<Args extends unknown[]> {
@@ -25,6 +26,7 @@ const currentUserId = () => useAuthStore.getState().user?.id ?? null;
 function useMutation<Args extends unknown[]>(action: (...args: Args) => Promise<void>): UseMutationResult<Args> {
   const { run, isSubmitting } = useSubmitLock();
   const [error, setError] = useState<string | null>(null);
+  const isMounted = useIsMounted();
 
   const mutate = useCallback(
     async (...args: Args) => {
@@ -34,13 +36,14 @@ function useMutation<Args extends unknown[]>(action: (...args: Args) => Promise<
           await action(...args);
           return true;
         } catch (e) {
-          setError(getErrorMessage(e));
+          // The user may have left the screen while this was running: no one is left to show the message to.
+          if (isMounted()) setError(getErrorMessage(e));
           return false;
         }
       });
       return succeeded ?? false;
     },
-    [run, action],
+    [run, action, isMounted],
   );
 
   const reset = useCallback(() => setError(null), []);

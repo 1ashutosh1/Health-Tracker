@@ -76,7 +76,14 @@ export function LoginScreen() {
     >
       <Screen scroll contentStyle={styles.content}>
         <View style={styles.header}>
-          <Ionicons name="heart" size={40} color={colors.heart} accessibilityElementsHidden />
+          {/* Decoration. The first prop hides it from VoiceOver, the second from TalkBack. */}
+          <Ionicons
+            name="heart"
+            size={40}
+            color={colors.heart}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          />
           <Text variant="largeTitle" accessibilityRole="header">
             Health
           </Text>
