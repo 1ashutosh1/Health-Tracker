@@ -16,6 +16,7 @@ import { Screen } from '../components/ui/Screen';
 import { Text } from '../components/ui/Text';
 import { loginSchema, type LoginValues } from '../domain/validation';
 import { useLogin } from '../hooks/useLogin';
+import { usePendingDeepLink } from '../hooks/usePendingDeepLink';
 import { layout, radius, spacing } from '../theme/spacing';
 import { typography } from '../theme/typography';
 import { useTheme } from '../theme/useTheme';
@@ -53,6 +54,7 @@ function GroupedField({ label, inputRef, trailing, ...inputProps }: GroupedField
 export function LoginScreen() {
   const { colors } = useTheme();
   const { login, isSubmitting, error: serverError, reset: clearServerError } = useLogin();
+  const hasPendingLink = usePendingDeepLink() !== null;
   const [showPassword, setShowPassword] = useState(false);
   const passwordRef = useRef<ComponentRef<typeof TextInput>>(null);
 
@@ -82,6 +84,15 @@ export function LoginScreen() {
             Sign in to track your check-ins.
           </Text>
         </View>
+
+        {hasPendingLink ? (
+          <View style={styles.pendingLink} accessible accessibilityLiveRegion="polite">
+            <Ionicons name="link-outline" size={18} color={colors.secondaryLabel} />
+            <Text variant="subhead" color="secondaryLabel" style={styles.pendingLinkText}>
+              Sign in to open the shared check-in
+            </Text>
+          </View>
+        ) : null}
 
         <View style={[styles.group, { backgroundColor: colors.card }]}>
           <Controller
@@ -191,6 +202,14 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { paddingTop: spacing.xl },
   header: { gap: spacing.xs, marginBottom: spacing.lg },
+  pendingLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.xs,
+  },
+  pendingLinkText: { flex: 1 },
   group: { borderRadius: radius.card, overflow: 'hidden' },
   fieldRow: {
     flexDirection: 'row',

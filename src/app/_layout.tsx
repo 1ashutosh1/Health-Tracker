@@ -10,6 +10,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 
+import { useDeepLinkHandler } from '../hooks/useDeepLinkHandler';
 import { useNetworkMonitor } from '../hooks/useNetworkMonitor';
 import { useNetworkSync } from '../hooks/useNetworkSync';
 import { useAuthStore } from '../stores/authStore';
@@ -17,7 +18,8 @@ import { fontFamily } from '../theme/typography';
 import { useTheme } from '../theme/useTheme';
 
 // A deep link straight to checkin/[id] still gets the tabs underneath it, so Back has somewhere to go.
-export const unstable_settings = { initialRouteName: '(tabs)' };
+// ("anchor" replaces the deprecated "initialRouteName" in this Expo Router version.)
+export const unstable_settings = { anchor: '(tabs)' };
 
 // Keep the splash screen up until fonts and the saved session are ready, so neither the
 // system font nor the login screen ever flashes.
@@ -31,6 +33,7 @@ export default function RootLayout() {
   // Both run for the whole life of the app. Syncing only does anything while a user is signed in.
   useNetworkMonitor();
   useNetworkSync();
+  useDeepLinkHandler();
 
   const [fontsLoaded, fontError] = useFonts({
     Inter_400Regular,

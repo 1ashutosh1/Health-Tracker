@@ -38,7 +38,7 @@ export function CheckinDetailScreen({ id }: CheckinDetailScreenProps) {
     if (checkin && checkin.id !== id) router.setParams({ id: checkin.id });
   }, [checkin, id, router]);
 
-  const goToList = useCallback(() => router.replace('/checkins'), [router]);
+  const goToList = useCallback(() => router.replace('/(tabs)/checkins'), [router]);
 
   const deleteAndLeave = useCallback(async () => {
     const deleted = await removeCheckin();
@@ -73,7 +73,7 @@ export function CheckinDetailScreen({ id }: CheckinDetailScreenProps) {
           icon="document-outline"
           title="Check-in not found"
           message="It may have been deleted, or the link is not valid."
-          actionLabel="Back to Check-ins"
+          actionLabel="Go to Check-ins"
           onAction={goToList}
         />
       </Screen>

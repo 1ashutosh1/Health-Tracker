@@ -92,15 +92,15 @@ describe('authStore', () => {
   });
 
   it('reset() returns to the signed-out state and drops the pending deep link', () => {
-    useAuthStore.setState({ status: 'signedIn', pendingDeepLink: 'healthtracker://checkin/ck_1' });
+    useAuthStore.setState({ status: 'signedIn', pendingDeepLink: 'ck_1' });
     useAuthStore.getState().reset();
     expect(useAuthStore.getState()).toMatchObject({ status: 'signedOut', pendingDeepLink: null });
   });
 
-  it('setPendingDeepLink remembers a link across the login', async () => {
-    useAuthStore.getState().setPendingDeepLink('healthtracker://checkin/ck_1');
+  it('setPendingDeepLink remembers a check-in id across the login', async () => {
+    useAuthStore.getState().setPendingDeepLink('ck_1');
     await useAuthStore.getState().login(demo);
-    expect(useAuthStore.getState().pendingDeepLink).toBe('healthtracker://checkin/ck_1');
+    expect(useAuthStore.getState().pendingDeepLink).toBe('ck_1');
   });
 
   it("logout wipes the previous user's check-ins and filters so the next account never sees them", async () => {

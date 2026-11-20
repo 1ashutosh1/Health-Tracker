@@ -16,7 +16,7 @@ interface AuthState {
   status: AuthStatus;
   user: User | null;
   token: string | null;
-  /** A deep link that arrived while signed out. Opened after login (used in the deep-link phase). */
+  /** The check-in id from a deep link that arrived while signed out. Opened once after login, and dropped on logout. */
   pendingDeepLink: string | null;
 
   /** Throws the server's error (wrong password, offline, ...) so the caller can show it. */
@@ -24,7 +24,7 @@ interface AuthState {
   logout: () => Promise<void>;
   /** Restores a saved session. Safe to call more than once. */
   hydrate: () => Promise<void>;
-  setPendingDeepLink: (url: string | null) => void;
+  setPendingDeepLink: (checkinId: string | null) => void;
   /** Back to the starting state. Other stores get the same method as they are added. */
   reset: () => void;
 }
@@ -93,7 +93,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     return hydrating;
   },
 
-  setPendingDeepLink: (url) => set({ pendingDeepLink: url }),
+  setPendingDeepLink: (checkinId) => set({ pendingDeepLink: checkinId }),
 
   reset: () => set({ ...SIGNED_OUT }),
 }));

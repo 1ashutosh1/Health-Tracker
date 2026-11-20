@@ -79,8 +79,8 @@ describe('CheckinDetailScreen', () => {
     await render(<CheckinDetailScreen id="ck_missing" />);
 
     expect(await screen.findByText('Check-in not found')).toBeTruthy();
-    await fireEvent.press(screen.getByText('Back to Check-ins'));
-    expect(mockReplace).toHaveBeenCalledWith('/checkins');
+    await fireEvent.press(screen.getByText('Go to Check-ins'));
+    expect(mockReplace).toHaveBeenCalledWith('/(tabs)/checkins');
   });
 
   it('shows an error with Retry when loading fails', async () => {
